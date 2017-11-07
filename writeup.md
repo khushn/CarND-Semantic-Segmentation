@@ -19,3 +19,6 @@ Note: For some reason, it installed NumPy again.
    * cd data/
    * wget <url provided by site http://www.cvlibs.net/download.php?file=data_road.zip>
 
+6. Download pre-trained VGG model
+	* comment out all the test.<calls> below all the functions in main.py, which are needed once the function is coded. 
+	* And then run 'python main.py' (This will download the pretrained VGG model, when run for the first time)
