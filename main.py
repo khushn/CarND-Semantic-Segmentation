@@ -72,12 +72,16 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     dec1 = tf.layers.conv2d_transpose(output1x1, num_classes, 4, strides=(2, 2), padding='same', 
         kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
+    # Instructions as per 
+    # https://discussions.udacity.com/t/here-is-some-advice-and-clarifications-about-the-semantic-segmentation-project/403100
+    pool4_out_scaled = tf.multiply(vgg_layer4_out, 0.01)
+
      #This post provided the missing piece
     #https://discussions.udacity.com/t/what-is-the-output-layer-of-the-pre-trained-vgg16-to-be-fed-to-layers-project/327033/25
     #As otherwise I was getting shape mistmatch
     #as vgg_layer4_out is 512 plates (i.e. no. of filters)
     # we need to get itto just 2 plates
-    vgg_layer4_out_thinned = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, strides=(1,1), 
+    vgg_layer4_out_thinned = tf.layers.conv2d(pool4_out_scaled, num_classes, 1, strides=(1,1), 
         kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     #Add the skip layer 4 of the encoder part to it
@@ -88,7 +92,8 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
         kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     #Again reduce the number of plates of layer 3
-    vgg_layer3_out_thinned = tf.layers.conv2d(vgg_layer3_out, num_classes, 1, strides=(1,1), 
+    pool3_out_scaled = tf.multiply(vgg_layer3_out, 0.001)
+    vgg_layer3_out_thinned = tf.layers.conv2d(pool3_out_scaled, num_classes, 1, strides=(1,1), 
         kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     #Add the skip layer 3 of the encoder part to it
@@ -120,8 +125,14 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     #Apparently we do so commenting it out
     #logits = nn_last_layer 
 
+    labels_reshaped = tf.reshape(correct_label, (-1, num_classes))
+
     #cross entropy loss
-    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label))
+    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels_reshaped))
+
+    reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+    reg_constant = 1  # Choose an appropriate one.
+    cross_entropy_loss += reg_constant * sum(reg_losses)
 
     #train_op
     optimizer = tf.train.AdamOptimizer(learning_rate)
@@ -150,7 +161,12 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param learning_rate: TF Placeholder for learning rate
     """
     # TODO: Implement function
-    #image_input1 = tf.placeholder(tf.float32, [None, None, None, 3])
+    #image_input1 = tf.placeholder(tf.float32, [None, None, None, 3])    
+
+    # Restore variables from disk.
+    #saver = tf.train.Saver()
+    #saver.restore(sess, "trained_model.ckpt")
+    #print("Model restored.")
 
     init = tf.global_variables_initializer()
     #this is run only once
@@ -160,11 +176,10 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
         print("epoch_i: ", epoch_i)
         images_generator = get_batches_fn(batch_size) 
         for images, gt_images in images_generator:                                    
-            sess.run([train_op, cross_entropy_loss], 
+            _, loss = sess.run([train_op, cross_entropy_loss], 
                 feed_dict={input_image: images, correct_label: gt_images, 
                             keep_prob: 0.5})
-        print('cross_entropy_loss: ', cross_entropy_loss)
-
+            print('loss: ', loss)
 
 tests.test_train_nn(train_nn)
 
@@ -175,9 +190,9 @@ def run():
     data_dir = './data'
     runs_dir = './runs'
     tests.test_for_kitti_dataset(data_dir)
-    epochs=5
+    epochs=2
     batch_size=2
-    learning_rate=.05
+    learning_rate=.005
 
     #image_ph = tf.placeholder(tf.float32, [None, None, None, 3])
     gt_image_ph = tf.placeholder(tf.float32, [None, None, None, num_classes])
@@ -194,7 +209,13 @@ def run():
         # Path to vgg model
         vgg_path = os.path.join(data_dir, 'vgg')
         # Create function to get batches
-        get_batches_fn = helper.gen_batch_function(os.path.join(data_dir, 'data_road/training_sample'), image_shape)
+
+        isLocal=False
+        path_to_train_dir = os.path.join(data_dir, 'data_road/training')
+        if isLocal:
+           path_to_train_dir = "training_sample"
+       
+        get_batches_fn = helper.gen_batch_function(path_to_train_dir, image_shape)
 
         # OPTIONAL: Augment Images for better results
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
@@ -204,9 +225,15 @@ def run():
         layers_output = layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes)
         logits, train_op, cross_entropy_loss = optimize(layers_output, gt_image_ph, learning_rate, num_classes)
 
+        saver = tf.train.Saver()
+
         # TODO: Train NN using the train_nn function
         train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image,
              gt_image_ph, keep_prob, learning_rate)
+
+        # Save the variables to disk.
+        save_path = saver.save(sess, "./trained_model.ckpt")
+        print("Model saved in file: %s" % save_path)
 
         # TODO: Save inference data using helper.save_inference_samples
         helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
