@@ -22,3 +22,9 @@ Note: For some reason, it installed NumPy again.
 6. Download pre-trained VGG model
 	* comment out all the test.<calls> below all the functions in main.py, which are needed once the function is coded. 
 	* And then run 'python main.py' (This will download the pretrained VGG model, when run for the first time)
+
+
+### References
+
+1. Nice advise on how to convolve skip layers to the same shape as the layer to which they are added: 
+https://discussions.udacity.com/t/what-is-the-output-layer-of-the-pre-trained-vgg16-to-be-fed-to-layers-project/327033/24
