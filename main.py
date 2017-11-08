@@ -59,27 +59,44 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     # TODO: Implement function
     #1st step 1x1 convolution instead of dense layer 
     #regularizer is to be added as suggested in the project walkthrought video
+
     output1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, strides=(1,1), 
         kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     #Decoder 1st level    
-    num_filters = 512 # should be the same dimension as skip layer we are going to add after 
+
+
+
+    #num_filters = 512 # should be the same dimension as skip layer we are going to add after 
                      # the transpose
-    dec1 = tf.layers.conv2d_transpose(output1x1, num_filters, 4, strides=(2, 2), padding='same')
+    dec1 = tf.layers.conv2d_transpose(output1x1, num_classes, 4, strides=(2, 2), padding='same', 
+        kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
+     #This post provided the missing piece
+    #https://discussions.udacity.com/t/what-is-the-output-layer-of-the-pre-trained-vgg16-to-be-fed-to-layers-project/327033/25
+    #As otherwise I was getting shape mistmatch
+    #as vgg_layer4_out is 512 plates (i.e. no. of filters)
+    # we need to get itto just 2 plates
+    vgg_layer4_out_thinned = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, strides=(1,1), 
+        kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     #Add the skip layer 4 of the encoder part to it
-    skip1 = tf.add(dec1, vgg_layer4_out)
+    skip1 = tf.add(dec1, vgg_layer4_out_thinned)
 
     #Decoder 2nd level
-    num_filters=256 #see comment for prev transpose
-    dec2 = tf.layers.conv2d_transpose(skip1, num_filters, 4, strides=(2, 2), padding='same')
+    dec2 = tf.layers.conv2d_transpose(skip1, num_classes, 4, strides=(2, 2), padding='same', 
+        kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
+    #Again reduce the number of plates of layer 3
+    vgg_layer3_out_thinned = tf.layers.conv2d(vgg_layer3_out, num_classes, 1, strides=(1,1), 
+        kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     #Add the skip layer 3 of the encoder part to it
-    skip2 = tf.add(dec2, vgg_layer3_out)
+    skip2 = tf.add(dec2, vgg_layer3_out_thinned)
 
-    #The last layer 
-    num_filters = num_classes #For the final layer we have num filters same as number of classes
-    output = tf.layers.conv2d_transpose(skip2, num_filters, 16, strides=(8, 8), padding='same')
+    
+    output = tf.layers.conv2d_transpose(skip2, num_classes, 16, strides=(8, 8), padding='same', 
+        kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     return output
 tests.test_layers(layers)
@@ -98,6 +115,10 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
 
     #logits
     logits = tf.reshape(nn_last_layer, (-1, num_classes))
+    #tensor flow can take care of working on loss even in case of any dimensions 
+    # so no need to to reshape it to 2-d
+    #Apparently we do so commenting it out
+    #logits = nn_last_layer 
 
     #cross entropy loss
     cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label))
