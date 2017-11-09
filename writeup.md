@@ -2,6 +2,7 @@
 
 All the main commands used
 
+
 1. conda create --name sem_seg
 
 2. Installing tensorflow for Python 3.6 and Only CPU version 
