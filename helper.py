@@ -110,10 +110,10 @@ def gen_test_output(sess, logits, keep_prob, image_pl, data_folder, image_shape)
     :return: Output for for each test image
     """
     
-    #Line to ne used on GPU
-    #for image_file in glob(os.path.join(data_folder, 'image_2', '*.png')):
     #Line to be used locally
-    for image_file in glob(os.path.join(data_folder, 'image_2', '*00[01].png')):    
+    #for image_file in glob(os.path.join(data_folder, 'image_2', '*00[01].png')):    
+    #Line to ne used on GPU
+    for image_file in glob(os.path.join(data_folder, 'image_2', '*.png')):
         image = scipy.misc.imresize(scipy.misc.imread(image_file), image_shape)
 
         im_softmax = sess.run(
