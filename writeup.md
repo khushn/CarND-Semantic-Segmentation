@@ -26,6 +26,12 @@ Note: For some reason, it installed NumPy again.
 	* And then run 'python main.py' (This will download the pretrained VGG model, when run for the first time)
 
 
+### Building the AMI after each run
+We need to do this, as no attaching any EBS (due to cost)
+
+aws ec2 create-image --instance-id i-09f2c138071f13788 --name "udacity-deep-learning v1" --description "Run on g3.4xlarge" --no-reboot
+
+
 ### References
 
 1. Nice advise on how to convolve skip layers to the same shape as the layer to which they are added: 
