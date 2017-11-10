@@ -1,6 +1,7 @@
 import re
 import random
 import numpy as np
+import cv2
 import os.path
 import scipy.misc
 import shutil
@@ -58,6 +59,18 @@ def maybe_download_pretrained_vgg(data_dir):
         os.remove(os.path.join(vgg_path, vgg_filename))
 
 
+#Thanks to https://chatbotslife.com/using-augmentation-to-mimic-human-driving-496b569760a9
+def augment_brightness_camera_images(image):
+    image1 = cv2.cvtColor(image,cv2.COLOR_RGB2HSV)
+    image1 = np.array(image1, dtype = np.float64)
+    random_bright = .5+np.random.uniform()
+    image1[:,:,2] = image1[:,:,2]*random_bright
+    image1[:,:,2][image1[:,:,2]>255]  = 255
+    image1 = np.array(image1, dtype = np.uint8)
+    image1 = cv2.cvtColor(image1,cv2.COLOR_HSV2RGB)
+    return image1
+
+
 def gen_batch_function(data_folder, image_shape):
     """
     Generate function to create batches of training data
@@ -85,6 +98,8 @@ def gen_batch_function(data_folder, image_shape):
                 gt_image_file = label_paths[os.path.basename(image_file)]
 
                 image = scipy.misc.imresize(scipy.misc.imread(image_file), image_shape)
+                #data augmentation
+                image = augment_brightness_camera_images(image)
                 gt_image = scipy.misc.imresize(scipy.misc.imread(gt_image_file), image_shape)
 
                 gt_bg = np.all(gt_image == background_color, axis=2)
@@ -142,3 +157,10 @@ def save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_p
         sess, logits, keep_prob, input_image, os.path.join(data_dir, 'data_road/testing'), image_shape)
     for name, image in image_outputs:
         scipy.misc.imsave(os.path.join(output_dir, name), image)
+
+#not used, had to abandon it, as prediction carried negative values, 
+# and mean_iou threw exception
+def mean_iou(ground_truth, prediction, num_classes):
+    # TODO: Use `tf.metrics.mean_iou` to compute the mean IoU.
+    iou, iou_op = tf.metrics.mean_iou(ground_truth, prediction, num_classes);
+    return iou, iou_op

@@ -26,13 +26,29 @@ Note: For some reason, it installed NumPy again.
 	* And then run 'python main.py' (This will download the pretrained VGG model, when run for the first time)
 
 
+7. GPU used
+	g3.4xlarge instances which are NVIDIA Tesla M60 GPUs
+
+
 ### Building the AMI after each run
 We need to do this, as no attaching any EBS (due to cost)
 
+1)
 aws ec2 create-image --instance-id i-09f2c138071f13788 --name "udacity-deep-learning v1" --description "Run on g3.4xlarge" --no-reboot
 
+NOTE: If the above command may not work, due to environment pointing to other zones, use the console to create the AMI, by giving name and description
+
+2) Connecting to the instance
+
+ssh -i udacity-deep-learning.pem ubuntu@<intance address>
 
 ### References
 
 1. Nice advise on how to convolve skip layers to the same shape as the layer to which they are added: 
 https://discussions.udacity.com/t/what-is-the-output-layer-of-the-pre-trained-vgg16-to-be-fed-to-layers-project/327033/24
+
+2. Inputs used for data augmentation (For adding shade to images)
+https://chatbotslife.com/using-augmentation-to-mimic-human-driving-496b569760a9
+
+3. Description of AWS g3 GPUs
+https://aws.amazon.com/about-aws/whats-new/2017/07/introducing-amazon-ec2-g3-instances-the-next-generation-of-gpu-powered-instances-for-graphics-intensive-applications/

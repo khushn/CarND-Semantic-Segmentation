@@ -140,7 +140,6 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
         loss=cross_entropy_loss,
         global_step=tf.train.get_global_step())
 
-
     return logits, train_op, cross_entropy_loss
 tests.test_optimize(optimize)
 
@@ -214,6 +213,8 @@ def run():
         path_to_train_dir = os.path.join(data_dir, 'data_road/training')
         if isLocal:
            path_to_train_dir = "training_sample"
+           epochs=1
+           batc
        
         get_batches_fn = helper.gen_batch_function(path_to_train_dir, image_shape)
 
