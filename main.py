@@ -189,9 +189,9 @@ def run():
     data_dir = './data'
     runs_dir = './runs'
     tests.test_for_kitti_dataset(data_dir)
-    epochs=6
+    epochs=10
     batch_size=4
-    learning_rate=.001
+    learning_rate=.0005
 
     #image_ph = tf.placeholder(tf.float32, [None, None, None, 3])
     gt_image_ph = tf.placeholder(tf.float32, [None, None, None, num_classes])
