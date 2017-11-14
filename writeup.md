@@ -34,7 +34,7 @@ Note: For some reason, it installed NumPy again.
 We need to do this, as no attaching any EBS (due to cost)
 
 1)
-aws ec2 create-image --instance-id i-09f2c138071f13788 --name "udacity-deep-learning v1" --description "Run on g3.4xlarge" --no-reboot
+aws ec2 create-image --instance-id i-09f2c138071f13788 --name "udacity-deep-learning-v3" --description "Run on g3.4xlarge" --no-reboot
 
 NOTE: If the above command may not work, due to environment pointing to other zones, use the console to create the AMI, by giving name and description
 
